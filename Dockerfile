@@ -1,5 +1,5 @@
 # ---- Build Stage ----
-FROM hexpm/elixir:1.20.0-erlang-28.0-debian-bookworm-20250407-slim AS build
+FROM elixir:1.18-slim AS build
 
 RUN apt-get update && apt-get install -y build-essential git && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
