@@ -1,34 +1,24 @@
 defmodule VrchatYtsearch.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
 
   @impl true
   def start(_type, _args) do
-    # Ejecutar migraciones automáticamente al arrancar (necesario en Render)
-    auto_migrate()
-
     children = [
       VrchatYtsearchWeb.Telemetry,
       VrchatYtsearch.Repo,
       {DNSCluster, query: Application.get_env(:vrchat_ytsearch, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: VrchatYtsearch.PubSub},
-      # Start a worker by calling: VrchatYtsearch.Worker.start_link(arg)
-      # {VrchatYtsearch.Worker, arg},
-      # Start to serve requests, typically the last entry
+      # Task que corre migraciones DESPUÉS de que el Repo arranca
+      {Task, fn -> auto_migrate() end},
       VrchatYtsearchWeb.Endpoint
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: VrchatYtsearch.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
-  # Tell Phoenix to update the endpoint configuration
-  # whenever the application is updated.
   @impl true
   def config_change(changed, _new, removed) do
     VrchatYtsearchWeb.Endpoint.config_change(changed, removed)
@@ -36,12 +26,20 @@ defmodule VrchatYtsearch.Application do
   end
 
   defp auto_migrate do
+    require Logger
+    # Pequeña espera para asegurar que el Repo esté listo
+    Process.sleep(500)
+
+    Logger.info("Running migrations...")
+
     Ecto.Migrator.run(
       VrchatYtsearch.Repo,
       :up,
       all: true
     )
+
+    Logger.info("Migrations complete.")
   rescue
-    e -> require Logger; Logger.warning("Migration warning: #{inspect(e)}")
+    e -> Logger.warning("Migration warning: #{inspect(e)}")
   end
 end
