@@ -11,7 +11,8 @@ defmodule VrchatYtsearchWeb.Router do
   scope "/", VrchatYtsearchWeb do
     pipe_through :api
 
-    get "/search", SearchController, :index
-    get "/health", HealthController, :index
+    get "/search",       SearchController, :index
+    get "/health",       HealthController, :index
+    get "/play/:index",  PlayController,   :redirect_to_video
   end
 end

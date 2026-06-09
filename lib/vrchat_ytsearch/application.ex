@@ -10,6 +10,8 @@ defmodule VrchatYtsearch.Application do
       VrchatYtsearch.Repo,
       {DNSCluster, query: Application.get_env(:vrchat_ytsearch, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: VrchatYtsearch.PubSub},
+      # Pool de URLs indexadas para VRChat (ETS + GenServer)
+      VrchatYtsearch.UrlPool,
       # Task que corre migraciones DESPUÉS de que el Repo arranca
       {Task, fn -> auto_migrate() end},
       VrchatYtsearchWeb.Endpoint

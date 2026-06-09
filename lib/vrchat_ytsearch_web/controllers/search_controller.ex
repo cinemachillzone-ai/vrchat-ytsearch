@@ -1,20 +1,25 @@
 defmodule VrchatYtsearchWeb.SearchController do
   use VrchatYtsearchWeb, :controller
 
-  alias VrchatYtsearch.Search
+  alias VrchatYtsearch.{Search, UrlPool}
 
   @doc """
   GET /search?q=lofi+hip+hop
   Devuelve 6 resultados de YouTube en JSON.
+  Cada resultado incluye "vrcurl": N — índice en el pool VRChat.
+  El índice apunta a /play/N que hace redirect al YouTube URL real.
   """
   def index(conn, %{"q" => query}) when byte_size(query) > 0 do
     case Search.search(query) do
       {:ok, results} ->
+        # Asignar índices del pool a cada resultado
+        indexed = UrlPool.assign(results)
+
         json(conn, %{
           ok:      true,
           query:   query,
-          count:   length(results),
-          results: results
+          count:   length(indexed),
+          results: indexed
         })
 
       {:error, reason} ->
