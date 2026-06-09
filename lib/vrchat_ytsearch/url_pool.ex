@@ -51,7 +51,7 @@ defmodule VrchatYtsearch.UrlPool do
     {indexed, new_next} =
       Enum.map_reduce(results, start, fn result, idx ->
         slot = rem(idx, @pool_size)
-        :ets.insert(@table, {slot, result.url, expires_at})
+        :ets.insert(@table, {slot, result["url"], expires_at})
         {Map.put(result, :vrcurl, slot), idx + 1}
       end)
 
