@@ -14,5 +14,6 @@ defmodule VrchatYtsearchWeb.Router do
     get "/search",       SearchController, :index
     get "/health",       HealthController, :index
     get "/play/:index",  PlayController,   :redirect_to_video
+    get "/thumb/:index", ThumbController,  :redirect_to_thumb
   end
 end

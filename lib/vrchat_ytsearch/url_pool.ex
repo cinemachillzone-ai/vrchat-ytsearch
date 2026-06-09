@@ -5,11 +5,12 @@ defmodule VrchatYtsearch.UrlPool do
   VRChat no permite crear VRCUrl en runtime, así que pre-asignamos
   500 slots en Unity (pool[0..499] → /play/0../play/499).
   Cuando llegan resultados de búsqueda, asignamos índices del pool
-  y guardamos el mapeo index → youtube_url en ETS con TTL de 30 min.
+  y guardamos el mapeo index → {youtube_url, thumbnail_url} en ETS con TTL de 30 min.
 
   Uso:
-    UrlPool.assign(results)  → [%{..., vrcurl: 0}, %{..., vrcurl: 1}, ...]
-    UrlPool.get_url(42)      → "https://www.youtube.com/watch?v=XYZ"
+    UrlPool.assign(results)   → [%{..., vrcurl: 0}, ...]
+    UrlPool.get_url(42)       → {:ok, "https://www.youtube.com/watch?v=XYZ"}
+    UrlPool.get_thumb(42)     → {:ok, "https://i.ytimg.com/vi/.../mqdefault.jpg"}
   """
 
   use GenServer
@@ -27,11 +28,20 @@ defmodule VrchatYtsearch.UrlPool do
     GenServer.call(__MODULE__, {:assign, results})
   end
 
-  @doc "Devuelve la YouTube URL para un índice dado, o nil si expiró / no existe."
+  @doc "Devuelve la YouTube URL para un índice dado, o :not_found si expiró / no existe."
   def get_url(index) when is_integer(index) do
     now = System.system_time(:second)
     case :ets.lookup(@table, index) do
-      [{^index, url, expires_at}] when expires_at > now -> {:ok, url}
+      [{^index, url, _thumb, expires_at}] when expires_at > now -> {:ok, url}
+      _ -> :not_found
+    end
+  end
+
+  @doc "Devuelve la thumbnail URL para un índice dado, o :not_found si expiró / no existe."
+  def get_thumb(index) when is_integer(index) do
+    now = System.system_time(:second)
+    case :ets.lookup(@table, index) do
+      [{^index, _url, thumb, expires_at}] when expires_at > now -> {:ok, thumb}
       _ -> :not_found
     end
   end
@@ -51,7 +61,8 @@ defmodule VrchatYtsearch.UrlPool do
     {indexed, new_next} =
       Enum.map_reduce(results, start, fn result, idx ->
         slot = rem(idx, @pool_size)
-        :ets.insert(@table, {slot, result["url"], expires_at})
+        thumb = result["thumbnail"] || ""
+        :ets.insert(@table, {slot, result["url"], thumb, expires_at})
         {Map.put(result, :vrcurl, slot), idx + 1}
       end)
 
@@ -63,6 +74,7 @@ defmodule VrchatYtsearch.UrlPool do
 
   defp cleanup_expired do
     now = System.system_time(:second)
-    :ets.select_delete(@table, [{{:_, :_, :"$1"}, [{:<, :"$1", now}], [true]}])
+    # Tupla de 4 elementos: {index, url, thumb, expires_at} — expires_at es "$1" en pos 4
+    :ets.select_delete(@table, [{{:_, :_, :_, :"$1"}, [{:<, :"$1", now}], [true]}])
   end
 end
