@@ -13,7 +13,7 @@ defmodule VrchatYtsearchWeb.ThumbController do
       {index, ""} ->
         case UrlPool.get_thumb(index) do
           {:ok, url} when url != "" ->
-            case :httpc.request(:get, {String.to_charlist(url), []}, [{:timeout, 5000}], [{:body_format, :binary}]) do
+            case :httpc.request(:get, {String.to_charlist(url), []}, [{:timeout, 5000}, {:ssl, [{:verify, :verify_none}]}], [{:body_format, :binary}]) do
               {:ok, {{_, 200, _}, headers, body}} ->
                 content_type =
                   headers
