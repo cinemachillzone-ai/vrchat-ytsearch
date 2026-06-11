@@ -12,10 +12,15 @@ defmodule VrchatYtsearchWeb.PlayController do
     case Integer.parse(index_str) do
       {index, ""} ->
         case UrlPool.get_url(index) do
-          {:ok, url} ->
+          {:ok, url} when is_binary(url) and url != "" ->
             conn
             |> put_resp_header("location", url)
             |> send_resp(302, "")
+
+          {:ok, _} ->
+            conn
+            |> put_status(:not_found)
+            |> json(%{ok: false, error: "URL vacía en índice #{index}"})
 
           :not_found ->
             conn

@@ -61,9 +61,10 @@ defmodule VrchatYtsearch.UrlPool do
     {indexed, new_next} =
       Enum.map_reduce(results, start, fn result, idx ->
         slot = rem(idx, @pool_size)
-        thumb = result["thumbnail"] || ""
-        :ets.insert(@table, {slot, result["url"], thumb, expires_at})
-        {Map.put(result, :vrcurl, slot), idx + 1}
+        url   = result["url"]   || result[:url]   || ""
+        thumb = result["thumbnail"] || result[:thumbnail] || ""
+        :ets.insert(@table, {slot, url, thumb, expires_at})
+        {Map.put(result, "vrcurl", slot), idx + 1}
       end)
 
     # Limpiar entradas expiradas cada ~10 búsquedas (cheap)

@@ -38,13 +38,15 @@ defmodule VrchatYtsearch.Ytdlp do
   defp parse_entry(json_line) do
     case Jason.decode(json_line) do
       {:ok, entry} ->
+        id = Map.get(entry, "id", "")
         %{
-          title:    Map.get(entry, "title", "Sin título"),
-          url:      "https://www.youtube.com/watch?v=#{Map.get(entry, "id", "")}",
-          thumbnail: Map.get(entry, "thumbnail") || thumbnail_url(Map.get(entry, "id")),
-          duration:  Map.get(entry, "duration", 0),
-          channel:   Map.get(entry, "uploader") || Map.get(entry, "channel", "Desconocido"),
-          view_count: Map.get(entry, "view_count", 0)
+          "title"       => Map.get(entry, "title", "Sin título"),
+          "url"         => "https://www.youtube.com/watch?v=#{id}",
+          "thumbnail"   => Map.get(entry, "thumbnail") || thumbnail_url(id),
+          "duration"    => Map.get(entry, "duration", 0) || 0,
+          "channel"     => Map.get(entry, "uploader") || Map.get(entry, "channel", "Desconocido"),
+          "view_count"  => Map.get(entry, "view_count", 0),
+          "uploaded_at" => Map.get(entry, "upload_date", "")
         }
 
       {:error, _} ->
